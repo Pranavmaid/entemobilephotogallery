@@ -118,13 +118,8 @@ class TopBar extends StatelessWidget {
           GestureDetector(
             onTap: onToggleSelect,
             behavior: HitTestBehavior.opaque,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: m.modePadH, vertical: m.modePadV),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(m.modeOuterRadius),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8,0,8,5),
               child: Icon(
                 Icons.check_circle_outline,
                 color: Colors.white,
