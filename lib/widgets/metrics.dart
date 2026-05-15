@@ -96,7 +96,7 @@ class Metrics {
       modePadV: 4 * s,
       modeRadius: 12 * s,
       modeOuterRadius: 14 * s,
-      topIconSize: 22 * s,
+      topIconSize: 18 * s,
       topIconGap: 6 * s,
       indicatorPadH: 22 * s,
       indicatorPadV: 12 * s,

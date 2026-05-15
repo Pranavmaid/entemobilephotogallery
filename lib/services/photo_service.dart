@@ -161,10 +161,18 @@ class PhotoService {
     return '${w[d.weekday - 1]}, ${_monthName(d.month)} ${d.day}';
   }
 
+  static FilterOptionGroup get _newestFirstFilter => FilterOptionGroup(
+        imageOption: const FilterOption(),
+        orders: const [
+          OrderOption(type: OrderOptionType.createDate, asc: false),
+        ],
+      );
+
   static Future<List<Photo>> loadDevice() async {
     final paths = await PhotoManager.getAssetPathList(
       type: RequestType.image,
       onlyAll: true,
+      filterOption: _newestFirstFilter,
     );
     if (paths.isEmpty) return const [];
     final all = paths.first;
@@ -175,13 +183,13 @@ class PhotoService {
   }
 
   /// Streams device photos in chunks (default 200) so the UI can paint the
-  /// first chunk immediately and append the rest as they arrive. Order is
-  /// newest-first because photo_manager sorts descending by createDateTime
-  /// by default.
+  /// first chunk immediately and append the rest as they arrive. Explicitly
+  /// ordered newest-first so chunk 1 = today / yesterday.
   static Stream<List<Photo>> loadDeviceChunked({int chunk = 200}) async* {
     final paths = await PhotoManager.getAssetPathList(
       type: RequestType.image,
       onlyAll: true,
+      filterOption: _newestFirstFilter,
     );
     if (paths.isEmpty) return;
     final all = paths.first;
