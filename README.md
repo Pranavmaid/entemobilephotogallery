@@ -2,7 +2,7 @@
 
 This is the photo gallery I built for Ente's mobile take-home.
 
-There were two parts to it. First, a grid of the device's photos where pinching changes how many columns you see — anywhere between 2 and 7. Second, swap that grid for a masonry layout so portraits stay tall and panoramas stay wide instead of everything being squared off.
+There were two parts to it. First, a grid of the device's photos where pinching changes how many columns you see - anywhere between 2 and 7. Second, swap that grid for a masonry layout so portraits stay tall and panoramas stay wide instead of everything being squared off.
 
 Both are in. Photos load from the device, get grouped into Today / Yesterday / This Week / earlier months, and you can pinch to resize, flip between grid and masonry, long-press to multi-select, or tap any photo to open a full-screen viewer.
 
@@ -128,24 +128,6 @@ A handful of photos report `width: 0` or absurd aspect ratios (panoramas mostly)
 **Permission changes causing rebuild storms.**
 `PhotoManager.addChangeCallback` fires on any media change. Without debouncing, taking a screenshot while the app is open would trigger an immediate full reload every few hundred ms. Wrapped in a 2-second debounce.
 
-**Sticky header showed the day twice.**
-After splitting the inline section headers from the sticky overlay, both displayed the same label whenever the inline header was sitting at the top of the scroll area — "Today" right above "Today". The scroll listener now only flips `_showSticky` to true once the current section's inline header has scrolled at least one header-height past the viewport top. `AnimatedSize` + `AnimatedOpacity` make the sticky band grow in and fade out instead of popping.
-
-**AnimatedSwitcher centered the sticky label.**
-First version of the section transition rendered the new label in the middle of the sticky band. `AnimatedSwitcher`'s default `layoutBuilder` uses `Alignment.center`. Overrode it to `Alignment.bottomLeft` to match the original anchor. Same fix made the slide-up transition look correct — incoming label slides up from the bottom, outgoing slides off the top, both clipped by `ClipRect`.
-
-**Sticky header overflowed by 1.1 px.**
-Font ascender/descender rounding put the Column 1.1 px over the available height of the sticky band on some screen scales. Flutter painted the striped overflow warning. Wrapped the inner Column in `FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.bottomLeft)`. Harmlessly shrinks rather than throwing.
-
-**Wrong Gemini model name, then quota.**
-First try used `gemini-2.5-flash-image-preview` — 404, the preview suffix is gone after the GA release. Switched to `gemini-2.5-flash-image`. Next hit 429 on the very first call: free-tier daily image-gen quota for that model is effectively zero on most projects. Two mitigations: source image is downscaled to 1024 px (~150 KB) before encode so we're not burning thousands of input tokens per call, and errors now show the full Gemini response in a scrollable dialog with a Copy button so you can read `quotaFailure.violations` directly instead of guessing.
-
-**`MissingPluginException` after adding a plugin.**
-Adding `share_plus` and then doing a hot reload — exception on first call. Hot reload / hot restart don't re-register native plugins. Full stop and `flutter run` again. Easy to forget; worth noting.
-
-**Android predictive-back warning.**
-`W/OnBackInvokedCallback: OnBackInvokedCallback is not enabled` on Android 13+. Added `android:enableOnBackInvokedCallback="true"` to `<application>` in `AndroidManifest.xml`. Harmless but worth doing once.
-
 ## Performance touches that ended up mattering
 
 - `ImageCache.maximumSize = 400`, `maximumSizeBytes = 320 MB`. Sized to fit ~400px thumbnails without thrashing.
@@ -177,4 +159,3 @@ Adding `share_plus` and then doing a hot reload — exception on first call. Hot
 
 - Tested on a Pixel-class Android device and an Android 14 emulator.
 - Requires `flutter` 3.8+ / Dart 3.
-- Redesign branch is `redesign/gallery`, tagged `v1.0.0-redesign`.

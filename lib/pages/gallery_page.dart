@@ -342,11 +342,9 @@ class _GalleryPageState extends State<GalleryPage> {
       backgroundColor: kBg,
       body: SafeArea(
         bottom: false,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator(color: kAccent))
-            : _error != null
-                ? _ErrorView(message: _error!, onRetry: _bootstrap)
-                : _buildGallery(m),
+        child: _error != null
+            ? _ErrorView(message: _error!, onRetry: _bootstrap)
+            : _buildGallery(m),
       ),
     ),
     );
@@ -398,6 +396,12 @@ class _GalleryPageState extends State<GalleryPage> {
                 pinchCols: _controller.cols,
                 accent: kAccent,
               ),
+              if (_loading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  color: kAccent,
+                  backgroundColor: Color(0xFF1A1A1A),
+                ),
               if (!_controller.selectMode && _passed.isNotEmpty)
                 _PassedBar(
                   passed: _passed,
