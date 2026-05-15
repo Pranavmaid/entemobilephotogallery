@@ -149,10 +149,8 @@ A handful of photos report `width: 0` or absurd aspect ratios (panoramas mostly)
 
 ## What's intentionally not here
 
-- No "Save" or "Favorite" buttons in the viewer. Save was meaningless (the photo is already on device); Favorite has no clean cross-platform setter through `photo_manager` on Android, so I dropped it rather than ship a half-working toggle.
 - No albums, search, video playback, or cloud sync. Out of scope.
 - No iOS-specific visual treatment beyond the status-bar inset.
-- No drag-to-select gesture.
 - Multi-select share/delete is wired only for a single open photo at a time; bulk actions from the grid's selection bar are still UI only.
 
 ## Notes
