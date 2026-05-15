@@ -115,11 +115,22 @@ class TopBar extends StatelessWidget {
           ),
           _ModeToggle(mode: mode, onChange: onModeChange, metrics: m),
           SizedBox(width: m.topIconGap),
-          IconButton(
-            onPressed: onToggleSelect,
-            icon: Icon(Icons.check_circle_outline,
-                color: Colors.white, size: m.topIconSize),
-            visualDensity: VisualDensity.compact,
+          GestureDetector(
+            onTap: onToggleSelect,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                  horizontal: m.modePadH, vertical: m.modePadV),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(m.modeOuterRadius),
+              ),
+              child: Icon(
+                Icons.check_circle_outline,
+                color: Colors.white,
+                size: m.modeIconSize,
+              ),
+            ),
           ),
         ],
       ),
