@@ -1,13 +1,12 @@
 # Ente Mobile Photo Gallery
 
-My Flutter take on the Ente mobile photo gallery assignment.
+This is the photo gallery I built for Ente's mobile take-home.
 
-The brief was two parts:
+There were two parts to it. First, a grid of the device's photos where pinching changes how many columns you see — anywhere between 2 and 7. Second, swap that grid for a masonry layout so portraits stay tall and panoramas stay wide instead of everything being squared off.
 
-1. A grid of device photos with pinch-to-zoom changing the column count between 2 and 7.
-2. A masonry layout that preserves each photo's aspect ratio.
+Both are in. Photos load from the device, get grouped into Today / Yesterday / This Week / earlier months, and you can pinch to resize, flip between grid and masonry, long-press to multi-select, or tap any photo to open a full-screen viewer.
 
-Both are in. The screen reads the device library, groups photos by date, lets you pinch to change density, switch between grid and masonry, long-press to multi-select, and tap to open a swipeable full-screen viewer.
+Most of my time on this didn't go into the happy path — that was straightforward. It went into the corner cases: scroll jumping back to the start on fast fling, headers piling up when you scrolled past short days, images flashing black during a pinch, anchor preservation crashing with a duplicate-GlobalKey, and so on. The "Things that went wrong, and what fixed them" section below is the honest log of that.
 
 ## Run it
 

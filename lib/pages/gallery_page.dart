@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:share_plus/share_plus.dart';
 import '../controllers/gallery_controller.dart';
 import '../models/photo.dart';
 import '../models/photo_section.dart';
@@ -247,10 +248,97 @@ class _GalleryPageState extends State<GalleryPage> {
     _controller.enterSelect(p.id);
   }
 
+  List<Photo> _selectedPhotos() {
+    final ids = _controller.selected;
+    if (ids.isEmpty) return const [];
+    return _flat.where((p) => ids.contains(p.id)).toList();
+  }
+
+  Future<void> _shareSelected() async {
+    final picks = _selectedPhotos();
+    if (picks.isEmpty) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final files = <XFile>[];
+      final urls = <String>[];
+      for (final p in picks) {
+        if (p is DevicePhoto) {
+          final f = await p.asset.file;
+          if (f != null) files.add(XFile(f.path));
+        } else if (p is FakePhoto) {
+          urls.add('https://picsum.photos/id/${p.picsumId}/1200');
+        }
+      }
+      if (files.isNotEmpty) {
+        await Share.shareXFiles(files);
+      } else if (urls.isNotEmpty) {
+        await Share.share(urls.join('\n'));
+      } else {
+        messenger
+            .showSnackBar(const SnackBar(content: Text('Nothing to share')));
+      }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Share failed: $e')));
+    }
+  }
+
+  Future<void> _deleteSelected() async {
+    final picks = _selectedPhotos();
+    if (picks.isEmpty) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: Text('Delete ${picks.length} photo${picks.length == 1 ? '' : 's'}?',
+            style: const TextStyle(color: Colors.white)),
+        content: const Text(
+          'This will permanently delete the selected photos from your device.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    final ids =
+        picks.whereType<DevicePhoto>().map((p) => p.asset.id).toList();
+    if (ids.isNotEmpty) {
+      try {
+        final removed = await PhotoManager.editor.deleteWithIds(ids);
+        if (removed.isEmpty) {
+          messenger.showSnackBar(
+              const SnackBar(content: Text('Delete cancelled')));
+          return;
+        }
+      } catch (e) {
+        messenger.showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+        return;
+      }
+    }
+    if (!mounted) return;
+    _controller.exitSelect();
+    await _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     final m = Metrics.of(context);
-    return Scaffold(
+    return PopScope(
+      canPop: !_controller.selectMode,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_controller.selectMode) _controller.exitSelect();
+      },
+      child: Scaffold(
       backgroundColor: kBg,
       body: SafeArea(
         bottom: false,
@@ -260,6 +348,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 ? _ErrorView(message: _error!, onRetry: _bootstrap)
                 : _buildGallery(m),
       ),
+    ),
     );
   }
 
@@ -379,7 +468,11 @@ class _GalleryPageState extends State<GalleryPage> {
               right: 0,
               bottom: 0,
               child: SelectionBar(
-                  count: _controller.selected.length, metrics: m),
+                count: _controller.selected.length,
+                metrics: m,
+                onShare: _shareSelected,
+                onDelete: _deleteSelected,
+              ),
             ),
         ],
       );
