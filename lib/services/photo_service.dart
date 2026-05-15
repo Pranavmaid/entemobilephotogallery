@@ -173,4 +173,24 @@ class PhotoService {
     final assets = await all.getAssetListRange(start: 0, end: count);
     return assets.map<Photo>(DevicePhoto.new).toList();
   }
+
+  /// Streams device photos in chunks (default 200) so the UI can paint the
+  /// first chunk immediately and append the rest as they arrive. Order is
+  /// newest-first because photo_manager sorts descending by createDateTime
+  /// by default.
+  static Stream<List<Photo>> loadDeviceChunked({int chunk = 200}) async* {
+    final paths = await PhotoManager.getAssetPathList(
+      type: RequestType.image,
+      onlyAll: true,
+    );
+    if (paths.isEmpty) return;
+    final all = paths.first;
+    final count = await all.assetCountAsync;
+    if (count == 0) return;
+    for (var start = 0; start < count; start += chunk) {
+      final end = start + chunk < count ? start + chunk : count;
+      final assets = await all.getAssetListRange(start: start, end: end);
+      yield assets.map<Photo>(DevicePhoto.new).toList();
+    }
+  }
 }

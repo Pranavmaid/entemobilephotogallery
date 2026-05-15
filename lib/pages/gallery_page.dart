@@ -45,6 +45,7 @@ class _GalleryPageState extends State<GalleryPage> {
   List<Photo> _flat = const [];
   int _totalCount = 0;
   Timer? _reloadDebounce;
+  int _reloadSeq = 0;
 
   @override
   void initState() {
@@ -173,26 +174,54 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Future<void> _reload() async {
-    final items = kUseFakePhotos
-        ? PhotoService.loadFake(count: kFakePhotoCount)
-        : await PhotoService.loadDevice();
-    final sections = PhotoService.bucketize(items);
+    final mySeq = ++_reloadSeq;
+    // Reset state at the start of each reload pass.
     if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+      _sections = const [];
+      _flat = const [];
+      _totalCount = 0;
+      _passed = const [];
+      _current = null;
+      _showSticky = false;
+    });
+    _sectionKeys.clear();
+    _sectionOffsets.clear();
+
+    if (kUseFakePhotos) {
+      final items = PhotoService.loadFake(count: kFakePhotoCount);
+      _applyPhotos(items, done: true, mySeq: mySeq);
+      return;
+    }
+
+    final acc = <Photo>[];
+    await for (final chunk in PhotoService.loadDeviceChunked()) {
+      if (!mounted || mySeq != _reloadSeq) return;
+      acc.addAll(chunk);
+      _applyPhotos(acc, done: false, mySeq: mySeq);
+    }
+    if (!mounted || mySeq != _reloadSeq) return;
+    _applyPhotos(acc, done: true, mySeq: mySeq);
+  }
+
+  void _applyPhotos(List<Photo> items, {required bool done, required int mySeq}) {
+    if (!mounted || mySeq != _reloadSeq) return;
+    final sections = PhotoService.bucketize(items);
     final flat = <Photo>[];
     for (final s in sections) {
       flat.addAll(s.photos);
     }
-    _sectionKeys
-      ..clear()
-      ..addEntries(sections.map((s) => MapEntry(s.key, GlobalKey())));
-    _sectionOffsets.clear();
+    // Reuse existing section keys; add new ones for sections that appeared.
+    for (final s in sections) {
+      _sectionKeys.putIfAbsent(s.key, GlobalKey.new);
+    }
     setState(() {
       _sections = sections;
       _flat = flat;
       _totalCount = items.length;
-      _passed = const [];
-      _loading = false;
-      _error = null;
+      if (done) _loading = false;
     });
   }
 
